@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Master Leaderboard</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f0f1a; color: white; margin: 0; padding: 40px; }
+        h1 { text-align: center; font-size: 3rem; text-transform: uppercase; letter-spacing: 2px; color: #00d2d3; margin-top: 0; }
+        table { width: 100%; max-width: 1600px; margin: 0 auto; border-collapse: collapse; font-size: 2rem; }
+        th, td { padding: 15px 20px; text-align: left; border-bottom: 2px solid #2d3436; }
+        th { color: #8395a7; text-transform: uppercase; font-size: 1.5rem; border-bottom: 4px solid #2d3436; }
+        .rank { color: #ff9f43; font-weight: bold; width: 5%; }
+        .team { font-weight: bold; width: 35%; }
+        .score { text-align: right; width: 15%; color: #c8d6e5; }
+        .total { color: #00d2d3; font-weight: bold; text-align: right; width: 15%; font-size: 2.2rem;}
+        tr:nth-child(even) { background-color: #1a1a2e; }
+        .empty { color: #444; } /* Grays out unplayed rounds */
+        .no-score { color: #636e72; font-style: italic; font-size: 1.5rem;} /* Styling for teams with no runs */
+    </style>
+</head>
+<body>
+    <h1>Aero Rage Final Standings</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Team Name</th>
+                <th style="text-align: right;">Round 1</th>
+                <th style="text-align: right;">Round 2</th>
+                <th style="text-align: right;">Round 3</th>
+                <th style="text-align: right;">Total Time</th>
+            </tr>
+        </thead>
+        <tbody id="leaderboardBody">
+            </tbody>
+    </table>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDzxvAi2DksFoVxtr5FMTJ7NQ4C10rgyDM",
+            authDomain: "aero-rage.firebaseapp.com",
+            databaseURL: "https://aero-rage-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "aero-rage",
+            storageBucket: "aero-rage.firebasestorage.app",
+            messagingSenderId: "110632418525",
+            appId: "1:110632418525:web:8f33a6404b163f43d36f34"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // The Master List of Teams
+        const masterTeams = [
+            "Aero Dynamic Quintet", 
+            "Marine Hawks", 
+            "Skyfie", 
+            "Switchblade",
+            "Algo Avengers", 
+            "5 wings", 
+            "Maydays", 
+            "Sky Voyagers"
+        ];
+        
+        onValue(ref(db, 'teams'), (snapshot) => {
+            // Get database data, or an empty object if the database is totally empty
+            const dbData = snapshot.val() || {}; 
+            const tbody = document.getElementById('leaderboardBody');
+            tbody.innerHTML = ''; 
+
+            // 1. Merge Master List with Database Data
+            const teamsArray = masterTeams.map(teamName => {
+                // If they exist in DB, use their times. If not, default to 0.
+                const teamData = dbData[teamName] || { r1: 0, r2: 0, r3: 0, total: 0 };
+                return { name: teamName, ...teamData };
+            });
+            
+            // 2. Advanced Sorting Logic
+            teamsArray.sort((a, b) => {
+                // If both teams have no score yet, keep their original order
+                if (a.total === 0 && b.total === 0) return 0;
+                // If Team A has no score, push them to the bottom
+                if (a.total === 0) return 1;
+                // If Team B has no score, push them to the bottom
+                if (b.total === 0) return -1;
+                // Otherwise, sort by fastest (lowest) time
+                return a.total - b.total;
+            });
+
+            // 3. Render the Table
+            teamsArray.forEach((team, index) => {
+                const formatScore = (score) => score > 0 ? score.toFixed(2) + "s" : "<span class='empty'>---</span>";
+
+                const tr = document.createElement('tr');
+                
+                // If a team has 0 total time, style them differently so they don't look like they are winning with 0 seconds
+                if (team.total === 0) {
+                     tr.innerHTML = `
+                        <td class="rank">--</td>
+                        <td class="team">${team.name}</td>
+                        <td class="score"><span class='empty'>---</span></td>
+                        <td class="score"><span class='empty'>---</span></td>
+                        <td class="score"><span class='empty'>---</span></td>
+                        <td class="total no-score">TBD</td>
+                    `;
+                } else {
+                    tr.innerHTML = `
+                        <td class="rank">#${index + 1}</td>
+                        <td class="team">${team.name}</td>
+                        <td class="score">${formatScore(team.r1)}</td>
+                        <td class="score">${formatScore(team.r2)}</td>
+                        <td class="score">${formatScore(team.r3)}</td>
+                        <td class="total">${team.total.toFixed(2)}s</td>
+                    `;
+                }
+                tbody.appendChild(tr);
+            });
+        });
+    </script>
+</body>
+</html>

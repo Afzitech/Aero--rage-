@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Active Score Display</title>
+    <style>
+        body { margin: 0; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #000; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; text-align: center;}
+        #roundDisplay { font-size: 4vw; color: #8395a7; text-transform: uppercase; letter-spacing: 5px; margin-bottom: 20px;}
+        #teamDisplay { font-size: 8vw; font-weight: bold; color: #ff9f43; margin-bottom: 40px; text-transform: uppercase;}
+        #timeDisplay { font-size: 15vw; font-weight: bold; color: #00d2d3; text-shadow: 0 0 30px rgba(0, 210, 211, 0.5); line-height: 1;}
+        .hidden { opacity: 0; }
+        .visible { opacity: 1; transition: opacity 0.5s ease-in; }
+    </style>
+</head>
+<body>
+    <div id="content" class="hidden">
+        <div id="roundDisplay">Waiting for Round...</div>
+        <div id="teamDisplay">TEAM NAME</div>
+        <div id="timeDisplay">0.00s</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDzxvAi2DksFoVxtr5FMTJ7NQ4C10rgyDM",
+            authDomain: "aero-rage.firebaseapp.com",
+            databaseURL: "https://aero-rage-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "aero-rage",
+            storageBucket: "aero-rage.firebasestorage.app",
+            messagingSenderId: "110632418525",
+            appId: "1:110632418525:web:8f33a6404b163f43d36f34"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        
+        // Listen exclusively to the Jumbotron channel
+        onValue(ref(db, 'current_display'), (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                document.getElementById('roundDisplay').innerText = data.round;
+                document.getElementById('teamDisplay').innerText = data.team;
+                document.getElementById('timeDisplay').innerText = data.time.toFixed(2) + "s";
+                document.getElementById('content').className = "visible";
+            }
+        });
+    </script>
+</body>
+</html>
