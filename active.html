@@ -4,17 +4,32 @@
     <meta charset="UTF-8">
     <title>Active Score Display</title>
     <style>
-        body { margin: 0; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #000; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; text-align: center;}
+        body { margin: 0; height: 100vh; background: #000; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; text-align: center; }
+        
+        /* Container for overlapping screens */
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.8s ease-in-out; }
+        
+        /* Idle State Styling */
+        #idleScreen { opacity: 1; z-index: 10; }
+        .logo-text { font-size: 8vw; color: #2d3436; letter-spacing: 15px; margin: 0; text-transform: uppercase; font-weight: 900;}
+        .waiting-text { font-size: 2vw; color: #636e72; text-transform: uppercase; letter-spacing: 5px; margin-top: 20px;}
+        
+        /* Score State Styling */
+        #scoreScreen { opacity: 0; z-index: 5; } /* Hidden by default */
         #roundDisplay { font-size: 4vw; color: #8395a7; text-transform: uppercase; letter-spacing: 5px; margin-bottom: 20px;}
         #teamDisplay { font-size: 8vw; font-weight: bold; color: #ff9f43; margin-bottom: 40px; text-transform: uppercase;}
         #timeDisplay { font-size: 15vw; font-weight: bold; color: #00d2d3; text-shadow: 0 0 30px rgba(0, 210, 211, 0.5); line-height: 1;}
-        .hidden { opacity: 0; }
-        .visible { opacity: 1; transition: opacity 0.5s ease-in; }
     </style>
 </head>
 <body>
-    <div id="content" class="hidden">
-        <div id="roundDisplay">Waiting for Round...</div>
+
+    <div id="idleScreen" class="screen">
+        <h1 class="logo-text">Aero Rage</h1>
+        <div class="waiting-text">Awaiting Next Run...</div>
+    </div>
+
+    <div id="scoreScreen" class="screen">
+        <div id="roundDisplay">Waiting...</div>
         <div id="teamDisplay">TEAM NAME</div>
         <div id="timeDisplay">0.00s</div>
     </div>
@@ -36,14 +51,36 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         
-        // Listen exclusively to the Jumbotron channel
+        let displayTimeout; // Variable to hold our timer
+
+        // Listen to the Jumbotron channel
         onValue(ref(db, 'current_display'), (snapshot) => {
             const data = snapshot.val();
-            if (data) {
+            
+            // If we have data (meaning a score was submitted)
+            if (data && data.team) {
+                // 1. Inject the text
                 document.getElementById('roundDisplay').innerText = data.round;
                 document.getElementById('teamDisplay').innerText = data.team;
                 document.getElementById('timeDisplay').innerText = data.time.toFixed(2) + "s";
-                document.getElementById('content').className = "visible";
+                
+                // 2. Hide Idle Screen, Show Score Screen
+                document.getElementById('idleScreen').style.opacity = '0';
+                document.getElementById('scoreScreen').style.opacity = '1';
+
+                // 3. Clear any existing timer (prevents glitches if you submit two scores back-to-back quickly)
+                clearTimeout(displayTimeout);
+
+                // 4. Set a timer to revert back to the Idle Screen after 5.5 seconds (5500 milliseconds)
+                displayTimeout = setTimeout(() => {
+                    document.getElementById('scoreScreen').style.opacity = '0';
+                    document.getElementById('idleScreen').style.opacity = '1';
+                }, 5500);
+            } 
+            // If data is null (which happens when you hit the Factory Reset button)
+            else {
+                document.getElementById('scoreScreen').style.opacity = '0';
+                document.getElementById('idleScreen').style.opacity = '1';
             }
         });
     </script>
