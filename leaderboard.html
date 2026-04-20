@@ -4,14 +4,7 @@
     <meta charset="UTF-8">
     <title>Master Leaderboard</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: #0f0f1a; 
-            color: white; 
-            margin: 0; 
-            padding: 40px; 
-            padding-bottom: 80px; 
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f0f1a; color: white; margin: 0; padding: 40px; padding-bottom: 80px; }
         h1 { text-align: center; font-size: 3rem; text-transform: uppercase; letter-spacing: 2px; color: #00d2d3; margin-top: 0; }
         
         .logo { position: absolute; top: 30px; max-height: 90px; z-index: 10; }
@@ -29,33 +22,10 @@
         .empty { color: #444; } 
         .no-score { color: #636e72; font-style: italic; font-size: 1.5rem;} 
 
-        .ticker-wrap {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            overflow: hidden;
-            background-color: #ff9f43; 
-            color: #000;
-            padding: 12px 0;
-            box-sizing: border-box;
-            z-index: 20;
-            border-top: 3px solid #e17055;
-        }
-        .ticker {
-            display: inline-block;
-            white-space: nowrap;
-            padding-left: 100%;
-            font-size: 1.8rem;
-            font-weight: 900;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            animation: ticker-anim 20s linear infinite;
-        }
-        @keyframes ticker-anim {
-            0% { transform: translate3d(0, 0, 0); }
-            100% { transform: translate3d(-100%, 0, 0); }
-        }
+        .ticker-wrap { position: fixed; bottom: 0; left: 0; width: 100%; overflow: hidden; background-color: #ff9f43; color: #000; padding: 12px 0; box-sizing: border-box; z-index: 20; border-top: 3px solid #e17055;}
+        .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; font-size: 1.8rem; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; animation: ticker-anim 20s linear infinite;}
+        
+        @keyframes ticker-anim { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
     </style>
 </head>
 <body>
@@ -72,7 +42,7 @@
                 <th style="text-align: right;">Round 1</th>
                 <th style="text-align: right;">Round 2</th>
                 <th style="text-align: right;">Round 3</th>
-                <th style="text-align: right;">Total Time</th>
+                <th style="text-align: right;">Total Points</th>
             </tr>
         </thead>
         <tbody id="leaderboardBody">
@@ -123,15 +93,20 @@
                 return { name: teamName, ...teamData };
             });
             
+            // REVERSED SORTING: Highest points win (b.total - a.total)
             teamsArray.sort((a, b) => {
+                // Keep teams with 0 points at the bottom as "TBD"
                 if (a.total === 0 && b.total === 0) return 0;
                 if (a.total === 0) return 1;
                 if (b.total === 0) return -1;
-                return a.total - b.total;
+                
+                // Sort by highest score
+                return b.total - a.total;
             });
 
             teamsArray.forEach((team, index) => {
-                const formatScore = (score) => score > 0 ? score.toFixed(2) + "s" : "<span class='empty'>---</span>";
+                // Formats the score to show "pts"
+                const formatScore = (score) => score > 0 ? score + " pts" : "<span class='empty'>---</span>";
                 const tr = document.createElement('tr');
                 
                 if (team.total === 0) {
@@ -150,7 +125,7 @@
                         <td class="score">${formatScore(team.r1)}</td>
                         <td class="score">${formatScore(team.r2)}</td>
                         <td class="score">${formatScore(team.r3)}</td>
-                        <td class="total">${team.total.toFixed(2)}s</td>
+                        <td class="total">${team.total} pts</td>
                     `;
                 }
                 tbody.appendChild(tr);
